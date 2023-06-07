@@ -1,8 +1,7 @@
+const { log } = require('console')
 var fs = require('fs')
 
-const path = './productos.json'
-
- 
+const path = 'src/productos.json'
 
 var productsArray = []
 
@@ -14,7 +13,6 @@ class ProductManager{
         this.products = productsArray
     }
 
-
     getProducts = async () =>{
 
         if (fs.existsSync(path)) {
@@ -22,20 +20,13 @@ class ProductManager{
             const prods = JSON.parse(data);
             return prods;
         }
-
         else{
             return []
         }
-
- 
-
     }
 
- 
-
     addProduct = async (productoNuevo) =>{
-
-        if ( !productoNuevo.title || !productoNuevo.description || !productoNuevo.price || !productoNuevo.thumbnail || !productoNuevo.code || !productoNuevo.stock ){
+        if ( !productoNuevo.title || !productoNuevo.description || !productoNuevo.code || !productoNuevo.price || !productoNuevo.stock || !productoNuevo.category || !productoNuevo.thumbnails ){
             return console.log("Debes completar todos los campos")
            }
 
@@ -58,17 +49,44 @@ class ProductManager{
 
 
     getProductById = async (id) =>{
-
         const prods = await this.getProducts();
-
 
         let oneProd = await prods.find((prod) => prod.id === id)
         if (!oneProd){
-          console.log("no existe ningún producto con ese id")
-          return
+            return("No existe ningún producto con ese id")
         }
         return JSON.stringify(oneProd)
 
+    }
+
+    modifyProduct = async (id, productoModificado)=>{
+
+        const prods = await this.getProducts();
+        const prodIndex = prods.findIndex((prod => prod.id === id))
+        if(prodIndex === -1){
+            return ("Este producto no existe")
+        }
+
+        const res = {};
+        Object.keys(prods[prodIndex])
+            .forEach(k => res[k] = ( productoModificado[k] ?? prods[prodIndex][k]) );
+
+        prods[prodIndex] = res
+        await fs.writeFileSync(path, JSON.stringify(prods))
+        return prods
+    }
+
+    deleteProduct = async (id)=>{
+        const prods = await this.getProducts();
+        const prodIndex = prods.findIndex((prod => prod.id === id))
+    
+        if(prodIndex === -1){
+            return ("Este producto no existe")
+        }
+
+        prods.splice(prodIndex, 1)
+        await fs.writeFileSync(path, JSON.stringify(prods))
+        return prods
     }
 }
 
