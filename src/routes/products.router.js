@@ -1,15 +1,13 @@
 const express = require('express')
-const ProductManager = require ('../Managers/productManager')
-
+const ProductManager = require ('../dao/productManagerMongo')
 const router = express.Router()
-const productos = new ProductManager()
 
 
 
 
 router.get('/', async (req, res)=>{  
     let limit = parseInt(req.query.limit);
-    let arrayProductos = await productos.getProducts()
+    let arrayProductos = await ProductManager.getProducts()
     if(!limit){
         res.send(arrayProductos)
     }else{
@@ -20,8 +18,8 @@ router.get('/', async (req, res)=>{
 })
 
 router.get('/:pid', async (req, res)=>{  
-    const pid = parseInt(req.params.pid)
-    const producto = await productos.getProductById(pid)
+    const pid = req.params.pid
+    const producto = await ProductManager.getProductById(pid)
     if(producto){
         res.send(producto)
     }else{
@@ -29,40 +27,30 @@ router.get('/:pid', async (req, res)=>{
     }
 })
 
-router.post('/', (req, res)=>{    
-    const {title, description, code, price, stock, category, thumbnails} = req.body
-    const productoNuevo = {
-        title: title,
-        description: description,
-        code: code,
-        price: price,
-        stock: stock,
-        category: category,
-        thumbnails: thumbnails,
-        status: true
-    }   
-    return res.send(productos.addProduct(productoNuevo))
+router.post('/', async (req, res)=>{    
+    const newProduct = req.body
+    const resp = await ProductManager.addProduct(newProduct)
+    return res.send(resp)
 })
 
 router.put("/:pid", async (req,res)=>{
-    const pid = parseInt(req.params.pid)
-    const {title, description, code, price, stock, category, thumbnails} = req.body
-    const productoModificado = {
-        title: title,
-        description: description,
-        code: code,
-        price: price,
-        stock: stock,
-        category: category,
-        thumbnails: thumbnails,
-        status: true
-    }   
-    return res.send(productos.modifyProduct(pid,productoModificado))
+    const {pid} = req.params
+
+    let modifiedProduct = req.body
+    if (!modifiedProduct.title || !modifiedProduct.thumbnail || !modifiedProduct.price || !modifiedProduct.code) {
+        return res.status(400).send({ message: 'Pasar todos los datos'})
+    }
+
+    let resp = await ProductManager.updateProduct(pid, modifiedProduct)
+    res.status(201).send({ 
+        users: resp,
+        message: 'usuario modificado' 
+    })
 })
 
 router.delete("/:pid", async (req,res)=>{
-    const pid = parseInt(req.params.pid)
-    return res.send(productos.deleteProduct(pid))
+    const pid = req.params.pid
+    return res.send(ProductManager.deleteProduct(pid))
 })
 
 module.exports = router
